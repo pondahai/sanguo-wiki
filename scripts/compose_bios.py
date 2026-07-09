@@ -20,6 +20,20 @@ NAME = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]*)?\]\]")
 PENALTY = {"repetition_penalty": 1.08, "presence_penalty": 0.5}
 
 
+META_RE = re.compile(r"清單未|故不列入|故不寫|推測基於|修正：|受限於清單|若清單")
+BROKEN_LINK = re.compile(r"\[\[([^\[\]|]{2,6})\](?!\])")
+
+
+def has_meta(bio):
+    """模型把『要不要寫』的掙扎寫進了正式輸出"""
+    return bool(META_RE.search(bio))
+
+
+def fix_links(bio):
+    """修復少一個右括號的斷腳連結 [[名字]"""
+    return BROKEN_LINK.sub(r"[[\1]]", bio)
+
+
 def is_degenerate(bio):
     """人物關係節同一名字出現 >3 次即視為重複迴圈退化"""
     rel = bio.split("### 人物關係")[-1]
@@ -100,12 +114,17 @@ def main():
         try:
             prompt = make_prompt(canon, CHARACTERS[canon], facts)
             bio = call_llm(prompt, max_tokens=4000, extra=PENALTY)
-            if is_degenerate(bio):
-                print("  degenerate, retrying ...", flush=True)
+            if is_degenerate(bio) or has_meta(bio):
+                print("  degenerate/meta, retrying ...", flush=True)
                 bio = call_llm(prompt, max_tokens=4000, temperature=0.7, extra=PENALTY)
             if is_degenerate(bio):
                 bio = dedupe_relations(bio)
                 print("  still degenerate, deduped", flush=True)
+            if has_meta(bio):
+                # 保底:整行剔除仍含碎念的條目
+                bio = "\n".join(ln for ln in bio.splitlines() if not META_RE.search(ln))
+                print("  still meta, lines dropped", flush=True)
+            bio = fix_links(bio)
         except Exception as e:
             print(f"  FAILED {canon}: {e}", flush=True)
             continue
