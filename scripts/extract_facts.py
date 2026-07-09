@@ -58,6 +58,14 @@ def make_prompt(num, title, text, present):
 
 
 def main():
+    # --only <名單檔>:只抽名單中的人物,結果另存 ch_NNN.<檔名>.json(增量擴充用,不動舊事實)
+    only, suffix = None, ""
+    if "--only" in sys.argv:
+        i = sys.argv.index("--only")
+        only_file = Path(sys.argv[i + 1])
+        only = set(only_file.read_text(encoding="utf-8").split())
+        suffix = "." + only_file.stem
+        del sys.argv[i : i + 2]
     lo = int(sys.argv[1]) if len(sys.argv) > 1 else 1
     hi = int(sys.argv[2]) if len(sys.argv) > 2 else 120
     FACTS.mkdir(exist_ok=True)
@@ -67,11 +75,16 @@ def main():
     for num, title, body in chapters:
         if not (lo <= num <= hi):
             continue
-        out = FACTS / f"ch_{num:03d}.json"
+        out = FACTS / f"ch_{num:03d}{suffix}.json"
         if out.exists():
             continue
         text = "\n".join(reflow(body))
         present = sorted({amap[m] for m in pattern.findall(text)})
+        if only is not None:
+            present = sorted(set(present) & only)
+            if not present:
+                out.write_text("{}", encoding="utf-8")
+                continue
         print(f"ch {num} ({len(text)} chars, {len(present)} chars present) ...", flush=True)
         try:
             raw = call_llm(make_prompt(num, title, text, present))

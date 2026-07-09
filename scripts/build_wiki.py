@@ -136,15 +136,22 @@ def main():
         content = f"# 第{num}回 {title}\n\n{nav}\n\n" + "\n\n".join(linked) + f"\n\n---\n{nav}\n"
         (VAULT / "回目" / f"{fname}.md").write_text(content, encoding="utf-8")
 
-    # 人物頁
+    # 人物頁(已有 LLM 生成生平的保留,不重置)
+    section_re = re.compile(r"## 生平\n(.*?)\n## 出場章回", re.S)
     for canon, aliases in CHARACTERS.items():
+        old_bio = None
+        old_page = VAULT / "人物" / f"{canon}.md"
+        if old_page.exists():
+            m = section_re.search(old_page.read_text(encoding="utf-8"))
+            if m and "待 LLM 生成" not in m.group(1):
+                old_bio = m.group(1).strip()
         chaps = appearances.get(canon, {})
         total = sum(chaps.values())
         lines = [f"# {canon}\n"]
         if aliases:
             lines.append(f"**別名**:{'、'.join(aliases)}\n")
         lines.append(f"**總出現次數**:{total},**出場回數**:{len(chaps)} 回\n")
-        lines.append("## 生平\n\n_(待 LLM 生成)_\n")
+        lines.append(f"## 生平\n\n{old_bio or '_(待 LLM 生成)_'}\n")
         lines.append("## 出場章回\n")
         for n in sorted(chaps):
             lines.append(f"- [[{chapter_files[n]}|第{n}回]] ({chaps[n]} 次)")

@@ -56,7 +56,7 @@ def load_facts():
     """人物 -> [(回數, 事實), ...]"""
     per_char = defaultdict(list)
     for f in sorted(FACTS.glob("ch_*.json")):
-        num = int(f.stem.split("_")[1])
+        num = int(re.match(r"ch_(\d+)", f.stem).group(1))
         for canon, facts in json.loads(f.read_text(encoding="utf-8")).items():
             for fact in facts:
                 per_char[canon].append((num, fact))
