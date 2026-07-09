@@ -8,8 +8,9 @@
 以 map-reduce 方式「全文閱讀」原著後生成,**每條事蹟都附回數出處,可回溯查證**。
 
 - **Obsidian vault**(`vault/`):`[[人名]]` 點擊跳轉,graph view 看人物關係網
-- **靜態網站**(`site/`,261 頁):零相依,雙擊 `site/index.html` 就能看;
-  索引頁即時篩選、自動深色模式,可直接部署 GitHub Pages
+- **靜態網站**(332 頁):線上直接看 <https://pondahai.github.io/sanguo-wiki/>,
+  push 後由 CI 自動從 vault 重建部署;索引頁即時篩選、自動深色模式。
+  也可本地跑 `python scripts/build_html.py` 後開 `site/index.html` 離線瀏覽
 
 ## 運作原理
 
@@ -29,7 +30,7 @@ flowchart TD
     D -->|"compose_bios.py(LLM·Reduce)<br>只准根據事實清單撰寫"| E["人物生平<br>每條事蹟附回數出處"]
     C --> F
     E --> F["vault/ 完整版"]
-    F -->|"build_html.py(不用LLM)<br>Markdown→HTML"| G["site/ 靜態網站 261頁"]
+    F -->|"build_html.py(不用LLM)<br>Markdown→HTML"| G["site/ 靜態網站 332頁<br>CI 自動部署 GitHub Pages"]
 ```
 
 ### 哪裡用 LLM,哪裡不用
@@ -49,7 +50,7 @@ flowchart TD
 
 ## 快速開始
 
-只是想看:用 Obsidian 開啟 `vault/`,或用瀏覽器開 `site/index.html`,完事。
+只是想看:打開 <https://pondahai.github.io/sanguo-wiki/>,或用 Obsidian 開啟 `vault/`,完事。
 
 想自己生成(或換一本書),需要:
 
@@ -92,7 +93,7 @@ data/facts/           逐回事實清單(map 產物,生平的可查證來源)
 scripts/characters.py 人物表:正名 + 別名(字、號、稱呼)
 scripts/*.py          四步流水線
 vault/                Obsidian vault(回目/、人物/、索引)
-site/                 靜態 HTML 網站(自動生成)
+site/                 靜態 HTML 網站(本地生成,不入 repo;CI 自動建置部署)
 ```
 
 ## 開發歷程:踩過的坑與學到的事
